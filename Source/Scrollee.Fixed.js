@@ -173,10 +173,10 @@ window.Scrollee.Fixed = new Class({
 	_handleFixed: function(direction, position){
 		var ref = this.references,
 			opts = this.options,
-			scrollTop = position - opts.topOffset + opts.windowTopOffset,
+			scrollTop = position + opts.windowTopOffset,
 			scrollBottom = scrollTop + ref.elementHeight,
 			containerBottom = ref.containerBottom - opts.bottomOffset,
-			containerTop = ref.containerTop - opts.topOffset;
+			containerTop = ref.containerTop + opts.topOffset;
 
 		this.status = direction;
 
