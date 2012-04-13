@@ -28,7 +28,15 @@ window.Scrollee.Fixed = new Class({
 		windowBottomOffset: 0,
 
 		// Determine whether class attaches on initialization or not
-		autoAttach: true
+		autoAttach: true,
+
+		fixedStyle: {
+			position: 'fixed'
+		},
+
+		absoluteStyle: {
+			position: 'absolute'
+		}
 	},
 
 	references: {
@@ -36,11 +44,7 @@ window.Scrollee.Fixed = new Class({
 		containerBottom: 0,
 		containerHeight: 0,
 		elementTop: 0,
-		elementLeft: 0,
-		elementFixedLeft: 0,
 		elementHeight: 0,
-		elementWidth: 0,
-		windowWidth: 0,
 		windowHeight: 0,
 		windowScrollSize: 0
 	},
@@ -60,10 +64,7 @@ window.Scrollee.Fixed = new Class({
 
 		// Create a wrapper element for positioning
 		this.wrapper = new Element('div', {
-			styles: {
-				position        : 'absolute',
-				webkitTransform : 'translate3d(0,0,0)'
-			}
+			styles: this.options.absoluteStyle
 		});
 
 		// Prebind events
@@ -100,41 +101,42 @@ window.Scrollee.Fixed = new Class({
 	},
 
 	updateInfo: function(){
-		var eInfo    = this.element.getCoordinates(this.container),
-			cInfo    = this.container.getCoordinates(document.body),
-			wInfo    = window.getSize(),
+		var ref		 = this.references,
+			opts	 = this.options,
+			eInfo	 = this.element.getCoordinates(this.container),
+			cInfo	 = this.container.getCoordinates(document.body),
+			wInfo	 = window.getSize(),
 			elHeight = eInfo.height,
-			cHeight  = cInfo.height - this.options.topOffset - this.options.bottomOffset;
+			cHeight  = cInfo.height - opts.topOffset - opts.bottomOffset,
+			styles   = {};
 
-		this.references.elementTop       = eInfo.top;
-		this.references.elementLeft      = eInfo.left;
-		this.references.elementHeight    = eInfo.height;
-		this.references.elementWidth     = eInfo.width;
-		this.references.elementFixedLeft = this.elParent.getCoordinates(document.body).left;
+		ref.elementTop		 = eInfo.top;
+		ref.elementHeight	 = eInfo.height;
 
-		this.references.containerTop     = cInfo.top;
-		this.references.containerBottom  = cInfo.bottom;
-		this.references.containerHeight  = cInfo.height;
+		ref.containerTop	 = cInfo.top;
+		ref.containerBottom  = cInfo.bottom;
+		ref.containerHeight  = cInfo.height;
 
-		this.references.windowWidth      = wInfo.x;
-		this.references.windowHeight     = wInfo.y;
-		this.references.windowScrollSize = window.getScrollSize().y - this.references.windowHeight;
+		ref.windowHeight	 = wInfo.y;
+		ref.windowScrollSize = window.getScrollSize().y - ref.windowHeight;
 
 		// Determine if menu is larger than window
-		if (elHeight < wInfo.y - this.options.windowTopOffset - this.options.windowBottomOffset){
-			this.options.fixed = true;
-		} else {
-			this.options.fixed = false;
-		}
+		if (elHeight < wInfo.y - opts.windowTopOffset - opts.windowBottomOffset)
+			opts.fixed = true;
+		else
+			opts.fixed = false;
 
 		// Determines whether class is even needed
 		if (elHeight < cHeight){
 			this.wrapper.adopt(this.element).inject(this.container);
-			this.wrapper.setStyles({
-			    position : 'absolute',
-			    width    : this.references.elementWidth,
-			    height   : this.references.elementHeight
-			}).adopt(this.element).inject(this.container);
+
+			Object.merge(styles, opts.absoluteStyle);
+			styles.height = ref.elementHeight;
+
+			this.wrapper.setStyles(styles)
+				.adopt(this.element)
+				.inject(this.container);
+
 			this._positionAbsolutely(Scrollee.getScroll());
 		}
 		// Disable class, since there's no need for a scroll
@@ -152,20 +154,22 @@ window.Scrollee.Fixed = new Class({
 		// Fix bounce issues
 		position = (position < 0) ? 0 : (position > this.references.windowScrollSize) ? this.references.windowScrollSize : position;
 
-		if (direction === 'stopped'){
-		    return this._handleStopped(direction, position);
-		}
+		// Executed if element is smaller than window height
 		if (this.options.fixed) {
 			return this._handleFixed(direction, position);
 		}
+
+		// Only executed if element is larger than window and needs special fixed scrolling properties
 		if (direction === 'up'){
-			if (this.status === 'down')
-				this._positionAbsolutely(position);
-		    return this._handleUp(direction, position);
+			if (this.status === 'down'){
+				this._positionAbsolutely();
+			}
+			return this._handleUp(direction, position);
 		}
 		if (direction === 'down'){
-			if (this.status === 'up')
-				this._positionAbsolutely(position);
+			if (this.status === 'up'){
+				this._positionAbsolutely();
+			}
 			return this._handleDown(direction, position);
 		}
 	},
@@ -176,26 +180,26 @@ window.Scrollee.Fixed = new Class({
 			scrollTop = position + opts.windowTopOffset,
 			scrollBottom = scrollTop + ref.elementHeight,
 			containerBottom = ref.containerBottom - opts.bottomOffset,
-			containerTop = ref.containerTop + opts.topOffset;
+			containerTop = ref.containerTop + opts.topOffset,
+			styles = { bottom: 'auto' };
 
 		this.status = direction;
 
 		// If we are outside the bounds of the container
 		if (scrollBottom >= containerBottom || scrollTop <= containerTop) {
 			if (this.positioning !== 'absolute')
-				return this._positionAbsolutely(position);
+				return this._positionAbsolutely();
 			return;
 		}
 
 		// Otherwise we must ensure we are fixed
 		if (this.positioning !== 'fixed'){
 			this.positioning = 'fixed';
-			this.wrapper.setStyles({
-				position: 'fixed',
-				top: opts.windowTopOffset,
-				left: ref.elementFixedLeft,
-				bottom: 'auto'
-			});
+
+			Object.merge(styles, opts.fixedStyle);
+			styles.top = opts.windowTopOffset;
+
+			this.wrapper.setStyles(styles);
 		}
 	},
 
@@ -203,16 +207,18 @@ window.Scrollee.Fixed = new Class({
 		var ref = this.references,
 			opts = this.options,
 			scrollTop = position - opts.topOffset + opts.windowTopOffset,
-			containerBottom = ref.containerBottom - ref.windowHeight,
+			containerBottom = ref.containerBottom - ref.windowHeight + opts.bottomOffset,
 			containerTop = ref.containerTop - opts.topOffset,
+			styles = { bottom: 'auto' },
 			wrapperTop;
 
 		this.status = 'up';
 
 		// If we are outside the bounds of the container
-		if (scrollTop >= containerBottom || scrollTop <= containerTop){
-			if (this.positioning !== 'absolute')
-				return this._positionAbsolutely(position);
+		if (scrollTop > containerBottom || scrollTop <= (containerTop + opts.topOffset)){
+			if (this.positioning !== 'absolute'){
+				return this._positionAbsolutely();
+			}
 			return;
 		}
 
@@ -220,14 +226,12 @@ window.Scrollee.Fixed = new Class({
 		if (this.positioning !== 'fixed'){
 			wrapperTop = containerTop + this.wrapper.getCoordinates(this.container).top;
 
+			Object.merge(styles, opts.fixedStyle);
+			styles.top = opts.windowTopOffset;
+
 			if (scrollTop <= wrapperTop){
 				this.positioning = 'fixed';
-				this.wrapper.setStyles({
-				    position: 'fixed',
-				    top: opts.windowTopOffset,
-				    left: ref.elementFixedLeft,
-				    bottom: 'auto'
-				});
+				this.wrapper.setStyles(styles);
 			}
 
 		}
@@ -239,14 +243,16 @@ window.Scrollee.Fixed = new Class({
 			scrollBottom = position + ref.windowHeight,
 			containerBottom = ref.containerBottom + opts.windowBottomOffset,
 			containerTop = ref.containerTop + ref.windowHeight,
+			styles = { top: 'auto' },
 			wrapperBottom;
 
 		this.status = 'down';
 
 		// After container
-		if (scrollBottom >= containerBottom || scrollBottom <= containerTop){
-			if (this.positioning !== 'absolute')
+		if (scrollBottom >= (containerBottom - opts.bottomOffset) || scrollBottom <= containerTop){
+			if (this.positioning !== 'absolute'){
 				return this._positionAbsolutely(position);
+			}
 			return;
 		}
 
@@ -255,43 +261,35 @@ window.Scrollee.Fixed = new Class({
 
 			 if (scrollBottom >= wrapperBottom){
 				this.positioning = 'fixed';
-				this.wrapper.setStyles({
-					position: 'fixed',
-					top: 'auto',
-					left: ref.elementFixedLeft,
-					bottom: this.options.windowBottomOffset
-				});
+
+				Object.merge(styles, opts.fixedStyle);
+				styles.bottom = opts.windowBottomOffset;
+
+				this.wrapper.setStyles(styles);
 			}
 		}
 	},
 
-	_handleStopped: function(direction, position){
-		if (this.positioning === 'absolute') return this.status = 'stopped';
-		this._positionAbsolutely(position);
-		this.status = 'stopped';
-	},
-
 	_positionAbsolutely: function(position){
-		if (this.positioning === 'absolute') return;
-
 		var top = 0,
 			ref = this.references,
-			maxTop = ref.containerBottom - ref.containerTop - ref.elementHeight - this.options.bottomOffset;
+			opts = this.options,
+			maxTop = ref.containerBottom - ref.containerTop - ref.elementHeight - opts.bottomOffset,
+			styles = { bottom: 'auto' };
 
-		if (this.status === 'up' || this.options.fixed)
-			top = position + this.options.windowTopOffset - this.references.containerTop;
-		if (this.status === 'down' && !this.options.fixed)
-			top = (position - ref.containerTop + ref.windowHeight) - this.options.windowBottomOffset - ref.elementHeight;
+		position = (position || position === 0) ? position + opts.windowTopOffset : this.element.getCoordinates(document.body).top;
 
-		if (top < this.options.topOffset)
-			top = this.options.topOffset;
-		if (top > maxTop) top = maxTop;
+		top = position - ref.containerTop;
 
-		this.wrapper.setStyles({
-			position: 'absolute',
-			top: top,
-			left: this.references.elementLeft
-		});
+		if (top < opts.topOffset)
+			top = opts.topOffset;
+		if (top > maxTop)
+			top = maxTop;
+
+		Object.merge(styles, opts.absoluteStyle);
+		styles.top = top;
+
+		this.wrapper.setStyles(styles);
 
 		this.positioning = 'absolute';
 	}
