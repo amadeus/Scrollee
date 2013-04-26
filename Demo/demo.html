@@ -74,31 +74,35 @@
 	</div>
 	<script src="https://ajax.googleapis.com/ajax/libs/mootools/1.4.5/mootools-yui-compressed.js" type="text/javascript" charset="utf-8"></script>
 	<script src="../Source/Scrollee.js" type="text/javascript" charset="utf-8"></script>
-	<script src="../Source/Scrollee.Fixed.js" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript" charset="utf-8">
-		var el = document.id('status'),
+		var el  = document.id('status'),
 			el2 = document.id('status2');
+
+		// Required in order for all this stuff to work
+		Scrollee.enable();
+
 		Scrollee.addEvent('scroll', function(direction){
 			el.set('text', direction);
 			el2.set('text', direction);
 		});
-		Scrollee.enable();
+
 		window.test = new Scrollee.Fixed('menu', 'container', {
-			topOffset: 20,
-			bottomOffset: 20,
-			windowTopOffset: 60,
-			windowBottomOffset: 60,
+			topOffset    : 20,
+			bottomOffset : 20,
+
+			windowTopOffset    : 60,
+			windowBottomOffset : 60,
 
 			fixedStyle: {
-				left: '50%',
-				marginLeft: '140px',
-				width: 340
+				left  : '50%',
+				width : 340,
+				marginLeft : '140px'
 			},
 
 			absoluteStyle: {
-				left: '50%',
-				marginLeft: '140px',
-				width: 340
+				left  : '50%',
+				width : 340,
+				marginLeft : '140px',
 			}
 		});
 	</script>
