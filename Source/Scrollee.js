@@ -11,10 +11,12 @@ authors:
 ...
 */
 
-(function(){
+(function(exports){ 'use strict';
+
+var Internal, Scrollee;
 
 // Private API
-var Internal = {
+Internal = {
 
 	// Reference to the last known document.scrollTop
 	lastTop: 0,
@@ -55,7 +57,7 @@ var Internal = {
 };
 
 // Public API
-var Scrollee = window.Scrollee = ({
+Scrollee = exports.Scrollee = ({
 
 	// Sets internal scrollEndDelay
 	setScrollEndDelay: function(delay){
@@ -74,12 +76,12 @@ var Scrollee = window.Scrollee = ({
 
 	// Enable Scrollee functionality
 	enable: function(){
-		window.addEvent('scroll', Internal.handleScroll);
+		exports.addEvent('scroll', Internal.handleScroll);
 	},
 
 	// Disable Scrollee functionality
 	disable: function(){
-		window.removeEvent('scroll', Internal.handleScroll);
+		exports.removeEvent('scroll', Internal.handleScroll);
 	},
 
 	// Aliases to internal event method (Internal.Events)
@@ -104,4 +106,4 @@ var Scrollee = window.Scrollee = ({
 	}
 });
 
-})();
+})(window);

@@ -11,42 +11,42 @@ authors:
 ...
 */
 
-(function(){
+(function(exports){ 'use strict';
 
 // Public API
-window.Scrollee.Fixed = new Class({
+exports.Scrollee.Fixed = new Class({
 
 	Implements: [Options, Events],
 
 	options: {
 		// Offset for bottom and top of container
-		topOffset: 0,
-		bottomOffset: 0,
+		topOffset    : 0,
+		bottomOffset : 0,
 
 		// Offset for window
-		windowTopOffset: 0,
-		windowBottomOffset: 0,
+		windowTopOffset    : 0,
+		windowBottomOffset : 0,
 
 		// Determine whether class attaches on initialization or not
 		autoAttach: true,
 
 		fixedStyle: {
-			position: 'fixed'
+			position : 'fixed'
 		},
 
 		absoluteStyle: {
-			position: 'absolute'
+			position : 'absolute'
 		}
 	},
 
 	references: {
-		containerTop: 0,
-		containerBottom: 0,
-		containerHeight: 0,
-		elementTop: 0,
-		elementHeight: 0,
-		windowHeight: 0,
-		windowScrollSize: 0
+		containerTop     : 0,
+		containerBottom  : 0,
+		containerHeight  : 0,
+		elementTop       : 0,
+		elementHeight    : 0,
+		windowHeight     : 0,
+		windowScrollSize : 0
 	},
 
 	status: 'disabled',
@@ -79,8 +79,8 @@ window.Scrollee.Fixed = new Class({
 		if (this.status !== 'disabled') return;
 		this.status = 'stopped';
 
-		Scrollee.addEvent('scroll', this._handleScroll);
-		window.addEvent('resize', this.updateInfo);
+		exports.Scrollee.addEvent('scroll', this._handleScroll);
+		exports.addEvent('resize', this.updateInfo);
 
 		this.updateInfo();
 
@@ -94,31 +94,31 @@ window.Scrollee.Fixed = new Class({
 		this.wrapper.dispose();
 		this.status = 'disabled';
 
-		Scrollee.removeEvent('scroll', this._handleScroll);
-		window.removeEvent('resize', this.updateInfo);
+		exports.Scrollee.removeEvent('scroll', this._handleScroll);
+		exports.removeEvent('resize', this.updateInfo);
 
 		return this;
 	},
 
 	updateInfo: function(){
-		var ref		 = this.references,
-			opts	 = this.options,
-			eInfo	 = this.element.getCoordinates(this.container),
-			cInfo	 = this.container.getCoordinates(document.body),
-			wInfo	 = window.getSize(),
+		var ref      = this.references,
+			opts     = this.options,
+			eInfo    = this.element.getCoordinates(this.container),
+			cInfo    = this.container.getCoordinates(document.body),
+			wInfo    = exports.getSize(),
 			elHeight = eInfo.height,
 			cHeight  = cInfo.height - opts.topOffset - opts.bottomOffset,
 			styles   = {};
 
-		ref.elementTop		 = eInfo.top;
-		ref.elementHeight	 = eInfo.height;
+		ref.elementTop    = eInfo.top;
+		ref.elementHeight = eInfo.height;
 
-		ref.containerTop	 = cInfo.top;
-		ref.containerBottom  = cInfo.bottom;
-		ref.containerHeight  = cInfo.height;
+		ref.containerTop    = cInfo.top;
+		ref.containerBottom = cInfo.bottom;
+		ref.containerHeight = cInfo.height;
 
-		ref.windowHeight	 = wInfo.y;
-		ref.windowScrollSize = window.getScrollSize().y - ref.windowHeight;
+		ref.windowHeight     = wInfo.y;
+		ref.windowScrollSize = exports.getScrollSize().y - ref.windowHeight;
 
 		// Determine if menu is larger than window
 		if (elHeight < wInfo.y - opts.windowTopOffset - opts.windowBottomOffset)
@@ -137,7 +137,7 @@ window.Scrollee.Fixed = new Class({
 				.adopt(this.element)
 				.inject(this.container);
 
-			this._positionAbsolutely(Scrollee.getScroll());
+			this._positionAbsolutely(exports.Scrollee.getScroll());
 		}
 		// Disable class, since there's no need for a scroll
 		else {
@@ -259,7 +259,7 @@ window.Scrollee.Fixed = new Class({
 		if (this.positioning !== 'fixed'){
 			wrapperBottom = ref.containerTop + this.wrapper.getCoordinates(this.container).bottom + this.options.windowBottomOffset;
 
-			 if (scrollBottom >= wrapperBottom){
+			if (scrollBottom >= wrapperBottom){
 				this.positioning = 'fixed';
 
 				Object.merge(styles, opts.fixedStyle);
@@ -296,4 +296,4 @@ window.Scrollee.Fixed = new Class({
 
 });
 
-})();
+})(window);
